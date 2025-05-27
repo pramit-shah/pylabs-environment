@@ -1,0 +1,30 @@
+name: PyLabs CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: 18
+    - name: Install frontend dependencies
+      run: cd pylabs_env/frontend && npm install
+    - name: Build frontend
+      run: cd pylabs_env/frontend && npm run build
+    - name: Run backend tests
+      run: |
+        pip install flask requests
+        docker-compose -f pylabs_env/docker-compose.yml up --build -d
+        sleep 20
+        python pylabs_env/core_services/logger/test_logger.py
+        python pylabs_env/core_services/analytics/test_analytics.py
