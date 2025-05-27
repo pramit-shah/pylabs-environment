@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  auth-service:
+    build: ./core_services/auth
+    ports:
+      - "5001:5001"
+    restart: always
+    volumes:
+      - auth_data:/app/data
+      - auth_logs:/app/logs
+    networks:
+      - pylabs-net
+
+  user-service:
+    build: ./core_services/user
+    ports:
+      - "5002:5002"
+    restart: always
+    volumes:
+      - user_data:/app/data
+      - user_logs:/app/logs
+    networks:
+      - pylabs-net
+
+  role-service:
+    build: ./core_services/role
+    ports:
+      - "5003:5003"
+    restart: always
+    volumes:
+      - role_data:/app/data
+      - role_logs:/app/logs
+    networks:
+      - pylabs-net
+
+  ai-service:
+    build: ./core_services/ai_orchestrator
+    ports:
+      - "5004:5004"
+    restart: always
+    volumes:
+      - ai_data:/app/data
+      - ai_logs:/app/logs
+    networks:
+      - pylabs-net
+
+  logger-service:
+    build: ./core_services/logger
+    ports:
+      - "5005:5005"
+    restart: always
+    volumes:
+      - logger_data:/app/data
+      - logger_logs:/app/logs
+    networks:
+      - pylabs-net
+
+  analytics-service:
+    build: ./core_services/analytics
+    ports:
+      - "5006:5006"
+    restart: always
+    volumes:
+      - analytics_data:/app/data
+      - analytics_logs:/app/logs
+    networks:
+      - pylabs-net
+
+volumes:
+  auth_data: {}
+  auth_logs: {}
+  user_data: {}
+  user_logs: {}
+  role_data: {}
+  role_logs: {}
+  ai_data: {}
+  ai_logs: {}
+  logger_data: {}
+  logger_logs: {}
+  analytics_data: {}
+  analytics_logs: {}
+
+networks:
+  pylabs-net:
+    driver: bridge
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - pylabs-net
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - pylabs-net

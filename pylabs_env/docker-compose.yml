@@ -1,16 +1,31 @@
 version: '3.8'
 
 services:
-  auth-service:
+    auth-service:
     build: ./core_services/auth
     ports:
       - "5001:5001"
-    restart: always
+
+   deploy:
+  restart_policy:
+    condition: on-failure
+    delay: 5s
+    max_attempts: 3
+
     volumes:
       - auth_data:/app/data
       - auth_logs:/app/logs
+    secrets:
+      - auth_secret
     networks:
       - pylabs-net
+      - auth-net
+      - pylabs-auth-services-net
+
+secrets:
+  auth_secret:
+    external: true
+
 
   user-service:
     build: ./core_services/user
@@ -67,6 +82,22 @@ services:
     networks:
       - pylabs-net
 
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - pylabs-net
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - pylabs-net
+
 volumes:
   auth_data: {}
   auth_logs: {}
@@ -83,20 +114,88 @@ volumes:
 
 networks:
   pylabs-net:
+    driver: bridge  # Shared core network, general use
+
+  monitoring-net:
+    driver: bridge  # For Prometheus & Grafana communication
+
+  pylabs-monitoring-net:
+    driver: macvlan  # Direct access to host NIC for monitoring tools
+
+  prometheus-net:
+    driver: bridge
+  grafana-net:
     driver: bridge
 
-  prometheus:
-    image: prom/prometheus
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-    networks:
-      - pylabs-net
+  core-services-net:
+    driver: ipvlan  # Isolated IP-level control for core services
 
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "3000:3000"
-    networks:
-      - pylabs-net
+  pylabs-core-services-net:
+    driver: ipvlan  # Secure layer for core services communication
+
+  ai-net:
+    driver: bridge
+  pylabs-ai-net:
+    driver: macvlan  # High-performance AI processing with host access
+  ai-services-net:
+    driver: ipvlan
+  pylabs-ai-services-net:
+    driver: ipvlan
+
+  user-net:
+    driver: bridge
+  pylabs-user-net:
+    driver: macvlan
+  user-services-net:
+    driver: ipvlan
+  pylabs-user-services-net:
+    driver: ipvlan
+
+  auth-net:
+    driver: bridge
+  pylabs-auth-net:
+    driver: macvlan  # Direct NIC access for authentication to reduce latency
+  auth-services-net:
+    driver: ipvlan
+  pylabs-auth-services-net:
+    driver: ipvlan
+
+  role-net:
+    driver: bridge
+  pylabs-role-net:
+    driver: ipvlan
+  role-services-net:
+    driver: ipvlan
+  pylabs-role-services-net:
+    driver: ipvlan
+
+  logger-net:
+    driver: bridge
+  pylabs-logger-net:
+    driver: macvlan
+  logger-services-net:
+    driver: ipvlan
+  pylabs-logger-services-net:
+    driver: ipvlan
+
+  analytics-net:
+    driver: bridge
+  pylabs-analytics-net:
+    driver: ipvlan
+  analytics-services-net:
+    driver: ipvlan
+  pylabs-analytics-services-net:
+    driver: ipvlan
+
+  pylabs-services-net:
+    driver: bridge
+  pylabs-monitoring-services-net:
+    driver: macvlan
+  pylabs-prometheus-net:
+    driver: macvlan
+  pylabs-prometheus-services-net:
+    driver: ipvlan
+  pylabs-grafana-net:
+    driver: macvlan
+  pylabs-grafana-services-net:
+    driver: ipvlan

@@ -1,0 +1,33 @@
+name: PyLabs CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:20.10.7
+        options: --privileged
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.11
+    - name: Install Dependencies
+      run: pip install flask requests
+    - name: Test Services
+      run: |
+        docker-compose -f pylabs_env/docker-compose.yml up --build -d
+        sleep 20
+        python pylabs_env/core_services/logger/test_logger.py
+        python pylabs_env/core_services/analytics/test_analytics.py
+        python pylabs_env/apps/monetization_suite/test_monetization.py
+        python pylabs_env/apps/deployment_manager/test_deployment.py
